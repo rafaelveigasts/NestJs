@@ -60,6 +60,12 @@ export class AuthService {
       throw new NotFoundException('User not found');
     }
 
+    const passwordMatch = await bcrypt.compare(password, user.password);
+
+    if (password !== user.password) {
+      throw new BadRequestException('Password invalid');
+    }
+
     return this.createToken(user);
   }
 
