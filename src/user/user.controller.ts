@@ -24,17 +24,17 @@ import { AuthGuard } from 'src/guards/auth.guard';
 @UseGuards(AuthGuard, RoleGuard)
 @UseInterceptors(LogInterceptor)
 @Controller('users')
+@Roles(Role.Admin)
 export class UserController {
   constructor(private readonly userService: UserService) {}
 
   @Roles(Role.Admin)
-  @UseInterceptors(LogInterceptor)
   @Post()
   async create(@Body() body: CreateUserDTO): Promise<any> {
     return this.userService.create(body);
   }
 
-  // @Roles(Role.Admin)
+  @Roles(Role.User, Role.Admin)
   @Get()
   async findAll(): Promise<any> {
     const users = await this.userService.findAll();
@@ -42,7 +42,6 @@ export class UserController {
     return users;
   }
 
-  @Roles(Role.Admin)
   @Get(':id')
   async findOne(@Param('id', ParseIntPipe) id): Promise<any> {
     const user = await this.userService.findOne(id);
@@ -50,7 +49,6 @@ export class UserController {
     return user;
   }
 
-  @Roles(Role.Admin)
   @Put(':id')
   async update(@ParamId() id, @Body() body: UpdateUserDTO): Promise<any> {
     return {
@@ -60,7 +58,6 @@ export class UserController {
     };
   }
 
-  @Roles(Role.Admin)
   @Patch(':id')
   async updatePartial(@Param() id, @Body() body): Promise<any> {
     return {
@@ -70,7 +67,6 @@ export class UserController {
     };
   }
 
-  @Roles(Role.Admin)
   @Delete(':id')
   async remove(@Param('id', ParseIntPipe) id): Promise<any> {
     return {

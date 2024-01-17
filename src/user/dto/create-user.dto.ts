@@ -20,7 +20,7 @@ export class CreateUserDTO {
     minNumbers: 0,
     minSymbols: 0,
   })
-  readonly password: string;
+  password: string;
 
   @IsOptional()
   @IsEnum(Role)

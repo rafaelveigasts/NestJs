@@ -12,7 +12,6 @@ export class LogInterceptor implements NestInterceptor {
             request.statusCode
           } - Time: ${new Date().getTime() - dt.getTime()}ms`,
         );
-        // console.log(`Execution time: ${new Date().getTime() - dt.getTime()}ms`);
       }),
     );
   }
