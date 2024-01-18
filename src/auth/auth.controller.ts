@@ -49,8 +49,8 @@ export class AuthController {
   }
 
   @Post('reset-password')
-  async resetPassword(@Body() password) {
-    return this.authService.reset(password);
+  async resetPassword(@Body() password: string, @Body() token: string) {
+    return this.authService.reset(password, token);
   }
 
   // assim retorna somente o email do usuário quando passar pelo guard ou a propriedade que for passada

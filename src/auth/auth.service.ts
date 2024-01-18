@@ -10,6 +10,7 @@ import { AuthloginDto } from './dto/auth.login.dto';
 import { Users } from '@prisma/client';
 import { AuthRegisterDto } from './dto/auth.register.dto';
 import { UserService } from 'src/user/user.service';
+import { MailerService } from '@nestjs-modules/mailer/dist';
 // import * as bcrypt from 'bcrypt';
 
 @Injectable()
@@ -19,6 +20,7 @@ export class AuthService {
     private readonly jwtService: JwtService,
     private readonly prisma: PrismaService,
     private readonly userService: UserService,
+    private readonly mailer: MailerService,
   ) {}
 
   async createToken(user: Users): Promise<any> {
@@ -78,17 +80,49 @@ export class AuthService {
       throw new NotFoundException('User not found');
     }
 
-    return user;
-  }
+    const token = this.jwtService.sign(
+      {
+        id: user.id,
+      }, // info do usuario
+      {
+        expiresIn: '1d',
+        issuer: this.issuer,
+        audience: 'users',
+      }, // configurações do token
+    );
 
-  async reset(password) {
-    const id = 1;
-    const user = await this.prisma.users.update({
-      where: { id },
-      data: { password },
+    await this.mailer.sendMail({
+      subject: 'Reset password',
+      to: user.email,
+      template: 'template',
+      context: {
+        name: user.name,
+        token,
+      },
     });
 
-    return this.createToken(user);
+    return true;
+  }
+
+  async reset(password, token: string) {
+    try {
+      const data = this.jwtService.verify(token, {
+        issuer: this.issuer,
+        audience: 'users',
+      });
+
+      const id = data.id;
+      const user = await this.prisma.users.update({
+        where: { id },
+        data: {
+          password,
+        },
+      });
+
+      return this.createToken(user);
+    } catch (error) {
+      throw new BadRequestException('Token invalid');
+    }
   }
 
   async register({
