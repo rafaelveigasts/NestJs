@@ -10,7 +10,7 @@ import { AuthloginDto } from './dto/auth.login.dto';
 import { Users } from '@prisma/client';
 import { AuthRegisterDto } from './dto/auth.register.dto';
 import { UserService } from 'src/user/user.service';
-import * as bcrypt from 'bcrypt';
+// import * as bcrypt from 'bcrypt';
 
 @Injectable()
 export class AuthService {
@@ -60,7 +60,7 @@ export class AuthService {
       throw new NotFoundException('User not found');
     }
 
-    const passwordMatch = await bcrypt.compare(password, user.password);
+    // const passwordMatch = await bcrypt.compare(password, user.password); // por algum motivo o compare retorna false mesmo com a senha correta
 
     if (password !== user.password) {
       throw new BadRequestException('Password invalid');

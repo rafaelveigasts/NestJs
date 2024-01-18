@@ -2,14 +2,17 @@ import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { ValidationPipe } from '@nestjs/common';
 import { LogInterceptor } from './interceptors/interceptors.module';
-
+import { EnvService } from './infra/config/env/env.service';
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, {
     logger: ['error', 'warn'],
   });
+  app.enableCors(); // habilita o cors, verificar a doc para mais detalhes https://docs.nestjs.com/security/cors
   app.useGlobalPipes(new ValidationPipe()); // adiciona o módulo de validação de dados
   app.useGlobalInterceptors(new LogInterceptor()); // adiciona o módulo de interceptors assim todos os métodos dos controllers terão o interceptor
-  await app.listen(3000);
+  const configService = app.get(EnvService); // obtém o serviço de configuração
+  const port = configService.get('PORT'); // obtém a porta da aplicação
+  await app.listen(port);
 }
 bootstrap();
 

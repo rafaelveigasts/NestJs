@@ -26,6 +26,8 @@ export class AuthGuard implements CanActivate {
       request.tokenPayload = data;
       request.user = await this.userService.findByEmail(data.email);
 
+      console.log(request.user);
+
       return true;
     } catch (error) {
       return false;
