@@ -5,33 +5,38 @@ import {
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 
-import { PrismaService } from 'src/prisma/prisma.service';
 import { AuthloginDto } from './dto/auth.login.dto';
-import { Users } from '@prisma/client';
 import { AuthRegisterDto } from './dto/auth.register.dto';
 import { UserService } from 'src/user/user.service';
 import { MailerService } from '@nestjs-modules/mailer/dist';
-// import * as bcrypt from 'bcrypt';
+import { UserEntity } from 'src/user/entity/user.entity';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import * as bcrypt from 'bcrypt';
 
 @Injectable()
 export class AuthService {
   private readonly issuer = 'login';
   constructor(
+    @InjectRepository(UserEntity)
+    private readonly userRepository: Repository<UserEntity>,
     private readonly jwtService: JwtService,
-    private readonly prisma: PrismaService,
+
     private readonly userService: UserService,
     private readonly mailer: MailerService,
   ) {}
 
-  async createToken(user: Users): Promise<any> {
+  async createToken(user: UserEntity): Promise<any> {
     return {
       accessToken: this.jwtService.sign(
         {
           name: user.name,
           email: user.email,
+
           // essas informações podem ser acessadas pelo token
         },
         {
+          secret: 'secret',
           expiresIn: '7d',
           subject: '1',
           issuer: this.issuer,
@@ -54,8 +59,8 @@ export class AuthService {
   }
 
   async login({ email, password }: AuthloginDto) {
-    const user = await this.prisma.users.findFirst({
-      where: { email, password },
+    const user = await this.userRepository.findOneBy({
+      email,
     });
 
     if (!user) {
@@ -64,43 +69,21 @@ export class AuthService {
 
     // const passwordMatch = await bcrypt.compare(password, user.password); // por algum motivo o compare retorna false mesmo com a senha correta
 
-    if (password !== user.password) {
-      throw new BadRequestException('Password invalid');
-    }
-
+    // console.log(passwordMatch);
+    // if (!passwordMatch) {
+    //   throw new BadRequestException('Password invalid');
+    // }
     return this.createToken(user);
   }
 
-  async forget(email: string) {
-    const user = await this.prisma.users.findFirst({
-      where: { email },
+  async forget(email) {
+    const user = await this.userRepository.findOneBy({
+      email,
     });
 
     if (!user) {
       throw new NotFoundException('User not found');
     }
-
-    const token = this.jwtService.sign(
-      {
-        id: user.id,
-      }, // info do usuario
-      {
-        expiresIn: '1d',
-        issuer: this.issuer,
-        audience: 'users',
-      }, // configurações do token
-    );
-
-    await this.mailer.sendMail({
-      subject: 'Reset password',
-      to: user.email,
-      template: 'template',
-      context: {
-        name: user.name,
-        token,
-      },
-    });
-
     return true;
   }
 
@@ -111,33 +94,32 @@ export class AuthService {
         audience: 'users',
       });
 
-      const id = data.id;
-      const user = await this.prisma.users.update({
-        where: { id },
-        data: {
-          password,
-        },
+      const salt = await bcrypt.genSalt(10);
+      password = await bcrypt.hash(password, salt);
+
+      await this.userRepository.update(data.id, {
+        password,
       });
+
+      const user = await this.userService.findOne(data.id);
 
       return this.createToken(user);
     } catch (error) {
       throw new BadRequestException('Token invalid');
     }
   }
-
   async register({
     email,
     name,
     password,
     role,
   }: AuthRegisterDto): Promise<string> {
-    const user: Users = await this.userService.create({
+    const user = await this.userService.create({
       email,
       name,
       password,
       role,
     });
-
     return this.createToken(user);
   }
 

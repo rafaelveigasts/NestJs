@@ -25,7 +25,9 @@ import {
 import { writeFile } from 'fs/promises';
 import { join } from 'path';
 import { FileService } from 'src/file/file.service';
+import { ApiTags } from '@nestjs/swagger';
 
+@ApiTags('auth')
 @Controller('auth')
 export class AuthController {
   constructor(
@@ -40,7 +42,7 @@ export class AuthController {
 
   @Post('register')
   async register(@Body() body: AuthRegisterDto) {
-    return this.authService.register(body);
+    // return this.authService.register(body);
   }
 
   @Post('forget-password')

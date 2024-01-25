@@ -11,6 +11,8 @@ import { envSchema } from './infra/config/env/env';
 import { EnvModule } from './infra/config/env/env.module';
 import { MailerModule } from '@nestjs-modules/mailer';
 import { PugAdapter } from '@nestjs-modules/mailer/dist/adapters/pug.adapter';
+import { TypeOrmModule } from '@nestjs/typeorm';
+import { UserEntity } from './user/entity/user.entity';
 
 @Module({
   imports: [
@@ -21,8 +23,8 @@ import { PugAdapter } from '@nestjs-modules/mailer/dist/adapters/pug.adapter';
     ThrottlerModule.forRoot({
       throttlers: [
         {
-          name: 'api',
-          limit: 1,
+          name: 'auth',
+          limit: 5,
           ttl: 60,
         },
       ],
@@ -49,6 +51,15 @@ import { PugAdapter } from '@nestjs-modules/mailer/dist/adapters/pug.adapter';
           strict: true,
         },
       },
+    }),
+    TypeOrmModule.forRoot({
+      type: 'postgres',
+      database: 'curso_nest',
+      host: 'localhost',
+      username: 'postgres',
+      password: 'postgres',
+      entities: [UserEntity],
+      synchronize: process.env.ENV === 'dev' ? true : false,
     }),
   ],
   controllers: [AppController],
